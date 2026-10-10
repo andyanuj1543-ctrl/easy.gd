@@ -1,14 +1,14 @@
 import React from 'react';
 import { 
   Users, Layers, Award, BarChart3, Settings, Play, 
-  BrainCircuit, BookOpen, Flame, Compass, History, Sparkles
+  BrainCircuit, BookOpen, Flame, Compass, History, Sparkles, ListChecks
 } from 'lucide-react';
 import { GDStage } from '../../types/gd';
 import { SelfUpgradeEngine } from '../../services/selfUpgradeEngine';
 
 interface SidebarProps {
-  currentTab: 'lobby' | 'history' | 'topics' | 'analytics' | 'settings';
-  onSelectTab: (tab: 'lobby' | 'history' | 'topics' | 'analytics' | 'settings') => void;
+  currentTab: 'lobby' | 'history' | 'topics' | 'analytics' | 'checklist' | 'settings';
+  onSelectTab: (tab: 'lobby' | 'history' | 'topics' | 'analytics' | 'checklist' | 'settings') => void;
   stage: GDStage;
   onRestart: () => void;
   onOpenSettings: () => void;
@@ -26,6 +26,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const navItems = [
     { id: 'lobby', label: 'GD Arena Arena', icon: Play, badge: stage === 'open_discussion' ? 'LIVE' : null },
     { id: 'topics', label: 'Topic Library', icon: BookOpen },
+    { id: 'checklist', label: 'IIM Checklist (Part 7)', icon: ListChecks },
     { id: 'analytics', label: 'Scorecard & Matrix', icon: Award },
     { id: 'history', label: 'Upgrade Logs', icon: History, count: profile.totalSessions },
   ] as const;

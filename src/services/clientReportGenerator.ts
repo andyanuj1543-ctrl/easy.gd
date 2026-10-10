@@ -25,6 +25,32 @@ export function generateClientSideReport(
   const nonModMsgs = messages.filter((m) => m.senderRole !== 'moderator');
   const startedGD = nonModMsgs.length > 0 && nonModMsgs[0].senderId === 'user';
 
+  // Filler words tracking from Research Spec (Rule 10: um, uh, like, you know, basically)
+  const allStudentText = studentMsgs.map(m => m.text).join(' ').toLowerCase();
+  const fillerRegex = /\b(um|uh|like|you know|basically|actually|sort of|kind of|i mean)\b/gi;
+  const detectedFillers = allStudentText.match(fillerRegex) || [];
+  const totalFillers = detectedFillers.length;
+  const speakingMins = Math.max(0.5, studentSpeakingSec / 60);
+  const fillersPerMin = Math.round((totalFillers / speakingMins) * 10) / 10;
+
+  let fillerGrade: 'Excellent (0)' | 'Good (1-2/min)' | 'Average (3-4/min)' | 'Poor (5+/min)' = 'Excellent (0)';
+  if (fillersPerMin > 4) fillerGrade = 'Poor (5+/min)';
+  else if (fillersPerMin >= 2.5) fillerGrade = 'Average (3-4/min)';
+  else if (fillersPerMin >= 0.8) fillerGrade = 'Good (1-2/min)';
+
+  // Research Spec 70/30 Content & Group Management Split (Spec Part 1.2 & 9.1)
+  const researchDepthScore = Math.min(30, Math.round((contentScore / 10) * 30));
+  const criticalPerspectivesScore = Math.min(40, Math.round((leadershipScore / 10) * 40));
+  const contentWeight70 = researchDepthScore + criticalPerspectivesScore; // out of 70
+
+  const bodyLanguageWeight10 = Math.min(10, Math.round((bodyLanguageScore / 10) * 10));
+  const languageWeight10 = Math.min(10, Math.round((communicationScore / 10) * 10));
+  const groupManagementStrategies10 = Math.min(10, Math.round((teamworkScore / 10) * 10));
+  const groupManagementWeight30 = bodyLanguageWeight10 + languageWeight10 + groupManagementStrategies10; // out of 30
+
+  const masterWeightedScore100 = contentWeight70 + groupManagementWeight30; // out of 100
+  const leadershipScale40 = Math.min(40, Math.round((leadershipScore / 10) * 40));
+
   const sampleQuote1 = firstMsg ? firstMsg.text : 'I believe before reaching conclusions, we must evaluate both perspectives.';
   const sampleQuote2 = studentMsgs.length > 1 ? studentMsgs[1].text : sampleQuote1;
   const quoteTime1 = firstMsg ? Math.floor(firstMsg.timestamp) : 45;
@@ -290,7 +316,44 @@ export function generateClientSideReport(
         strategicPrinciple: 'The Anchor Pivot: Steer the group back to the core agenda to score high moderator points.'
       }
     ],
-    selfUpgradeLog
+    selfUpgradeLog,
+
+    // UPGRADE 5.0 — Research-Backed & IIM Process Additions
+    iimDualEvaluators: {
+      academicEvaluator: {
+        name: 'Prof. K. R. Raghavan',
+        role: 'Faculty Evaluator 1 (Academic & Content Chair)',
+        contentScore: Math.round(contentScore * 4), // out of 40
+        researchDepthScore: researchDepthScore, // out of 30
+        criticalPerspectivesScore: criticalPerspectivesScore, // out of 40
+        summaryEvaluation: startedGD
+          ? 'Strong initial framing. Demonstrated structured understanding of the core macro thesis.'
+          : 'Participated with relevant substantive arguments. Encouraged to cite more empirical citations early.',
+        detailedNotes: `Demonstrated clear reasoning across economic and social consequences. Scored ${contentWeight70}/70 on academic content rigor.`
+      },
+      corporateEvaluator: {
+        name: 'Sunita Mehra',
+        role: 'Faculty Evaluator 2 (Corporate Recruitment Panelist)',
+        groupManagementScore: groupManagementWeight30, // out of 30
+        bodyLanguageScore: bodyLanguageWeight10, // out of 10
+        languagePacingScore: languageWeight10, // out of 10
+        leadershipScale40: leadershipScale40, // out of 40
+        detailedNotes: `Speaking airtime was well calibrated at ${studentSpeakingPercent}%. Vocal projection and conversational manners reflected mature collaborative readiness.`
+      }
+    },
+
+    fillerMetrics: {
+      totalFillers,
+      fillersPerMinute: fillersPerMin,
+      fillerWordsDetected: Array.from(new Set(detectedFillers)),
+      grade: fillerGrade
+    },
+
+    researchMarkingSplit: {
+      contentWeight70,
+      groupManagementWeight30,
+      masterWeightedScore100
+    }
   };
 }
 

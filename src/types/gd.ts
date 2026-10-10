@@ -182,6 +182,41 @@ export interface GDReport {
 
   // Self Upgrade Engine Log
   selfUpgradeLog?: SelfUpgradeLog;
+
+  // UPGRADE 5.0 — Research-Backed & IIM Specification Additions
+  iimDualEvaluators?: {
+    academicEvaluator: {
+      name: string;
+      role: string;
+      contentScore: number; // /40
+      researchDepthScore: number; // /30
+      criticalPerspectivesScore: number; // /40
+      summaryEvaluation: string;
+      detailedNotes: string;
+    };
+    corporateEvaluator: {
+      name: string;
+      role: string;
+      groupManagementScore: number; // /30
+      bodyLanguageScore: number; // /10
+      languagePacingScore: number; // /10
+      leadershipScale40: number; // /40
+      detailedNotes: string;
+    };
+  };
+  fillerMetrics?: {
+    totalFillers: number;
+    fillersPerMinute: number;
+    fillerWordsDetected: string[];
+    grade: 'Excellent (0)' | 'Good (1-2/min)' | 'Average (3-4/min)' | 'Poor (5+/min)';
+  };
+  researchMarkingSplit?: {
+    contentWeight70: number; // 70%
+    groupManagementWeight30: number; // 30%
+    masterWeightedScore100: number; // out of 100
+  };
+  writtenSummary?: string;
+  writtenSummaryFeedback?: string;
 }
 
 export interface RoomSettings {

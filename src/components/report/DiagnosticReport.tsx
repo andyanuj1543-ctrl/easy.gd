@@ -85,6 +85,121 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({ report, onRe
             {report.executiveSummary}
           </p>
         </div>
+        {/* IIM Dual Evaluator Panel Assessment (Spec Part 1.1 & 8.2 #12) */}
+        {report.iimDualEvaluators && (
+          <div className="pt-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                <Shield className="w-4 h-4 text-indigo-600" />
+                <span>IIM-Standard 2-Evaluator Panel Assessment (Part 1.1)</span>
+              </h3>
+              <span className="text-[10px] text-slate-400 font-mono">2 Faculty Chairs</span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Evaluator 1: Academic Chair */}
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-2.5">
+                <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                  <div>
+                    <div className="text-xs font-bold text-slate-900">
+                      {report.iimDualEvaluators.academicEvaluator.name}
+                    </div>
+                    <div className="text-[10px] text-slate-500 font-medium">
+                      {report.iimDualEvaluators.academicEvaluator.role}
+                    </div>
+                  </div>
+                  <span className="text-xs font-mono font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded">
+                    Content: {report.iimDualEvaluators.academicEvaluator.contentScore}/40
+                  </span>
+                </div>
+                <p className="text-xs text-slate-700 leading-relaxed italic">
+                  &ldquo;{report.iimDualEvaluators.academicEvaluator.summaryEvaluation}&rdquo;
+                </p>
+                <div className="text-[11px] text-slate-500">
+                  {report.iimDualEvaluators.academicEvaluator.detailedNotes}
+                </div>
+              </div>
+
+              {/* Evaluator 2: Corporate HR Chair */}
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-2.5">
+                <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                  <div>
+                    <div className="text-xs font-bold text-slate-900">
+                      {report.iimDualEvaluators.corporateEvaluator.name}
+                    </div>
+                    <div className="text-[10px] text-slate-500 font-medium">
+                      {report.iimDualEvaluators.corporateEvaluator.role}
+                    </div>
+                  </div>
+                  <span className="text-xs font-mono font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded">
+                    Group Mgmt: {report.iimDualEvaluators.corporateEvaluator.groupManagementScore}/30
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-[10px] font-mono text-slate-600">
+                  <div className="bg-white border border-slate-200 rounded p-1.5">
+                    Body Language: <strong>{report.iimDualEvaluators.corporateEvaluator.bodyLanguageScore}/10</strong>
+                  </div>
+                  <div className="bg-white border border-slate-200 rounded p-1.5">
+                    Leadership Scale: <strong>{report.iimDualEvaluators.corporateEvaluator.leadershipScale40}/40</strong>
+                  </div>
+                </div>
+                <div className="text-[11px] text-slate-500">
+                  {report.iimDualEvaluators.corporateEvaluator.detailedNotes}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Research-Backed Marking Breakdown (70% Content / 30% Group Management) & Filler Tracking */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-slate-100">
+          {/* 70/30 Split Card */}
+          {report.researchMarkingSplit && (
+            <div className="bg-indigo-50/50 border border-indigo-100 rounded-lg p-3.5 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-indigo-900 uppercase tracking-wider">
+                  Research 70/30 Marking Split
+                </span>
+                <span className="text-xs font-mono font-bold text-indigo-700">
+                  {report.researchMarkingSplit.masterWeightedScore100}/100
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-xs text-slate-700">
+                <span>Content & Rigor (70% weight):</span>
+                <strong className="font-mono">{report.researchMarkingSplit.contentWeight70}/70</strong>
+              </div>
+              <div className="flex items-center justify-between text-xs text-slate-700">
+                <span>Group Management (30% weight):</span>
+                <strong className="font-mono">{report.researchMarkingSplit.groupManagementWeight30}/30</strong>
+              </div>
+            </div>
+          )}
+
+          {/* Filler Word Tracking Card */}
+          {report.fillerMetrics && (
+            <div className="bg-slate-50 border border-slate-200 rounded-lg p-3.5 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-slate-800 uppercase tracking-wider">
+                  Speech Filler Tracking (Spec Rule 10)
+                </span>
+                <span className="text-xs font-semibold text-slate-700">
+                  {report.fillerMetrics.grade}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-xs text-slate-700">
+                <span>Fillers Detected ({report.fillerMetrics.totalFillers} total):</span>
+                <span className="font-mono font-bold text-indigo-600">
+                  {report.fillerMetrics.fillersPerMinute} per min
+                </span>
+              </div>
+              <div className="text-[10px] text-slate-500 truncate">
+                {report.fillerMetrics.fillerWordsDetected.length > 0
+                  ? `Identified words: ${report.fillerMetrics.fillerWordsDetected.join(', ')}`
+                  : 'Zero vocal filler words detected — clean delivery.'}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Official 8-Part Scorecard Matrix (/80) - PART B3 & D3 of Spec */}

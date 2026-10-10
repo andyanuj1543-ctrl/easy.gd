@@ -8,6 +8,7 @@ import { Navbar } from './components/common/Navbar';
 import { Sidebar } from './components/common/Sidebar';
 import { TopicsDrawer } from './components/common/TopicsDrawer';
 import { AnalyticsView } from './components/common/AnalyticsView';
+import { ChecklistView } from './components/common/ChecklistView';
 import { SetupModal } from './components/setup/SetupModal';
 import { ApiKeyConfigModal } from './components/setup/ApiKeyConfigModal';
 import { PrepCountdownModal } from './components/room/PrepCountdownModal';
@@ -19,7 +20,7 @@ import { generateClientSideReport } from './services/clientReportGenerator';
 import { Loader2 } from 'lucide-react';
 
 export const App: React.FC = () => {
-  const [currentTab, setCurrentTab] = useState<'lobby' | 'history' | 'topics' | 'analytics' | 'settings'>('lobby');
+  const [currentTab, setCurrentTab] = useState<'lobby' | 'history' | 'topics' | 'analytics' | 'checklist' | 'settings'>('lobby');
   const [stage, setStage] = useState<GDStage>('setup');
   const [settings, setSettings] = useState<RoomSettings | null>(null);
   const [participants, setParticipants] = useState<PersonaConfig[]>(AI_CANDIDATE_PERSONAS.slice(0, 4));
@@ -376,6 +377,12 @@ export const App: React.FC = () => {
                     // Start or preselect topic and return to lobby
                     setCurrentTab('lobby');
                   }}
+                />
+              )}
+
+              {currentTab === 'checklist' && (
+                <ChecklistView
+                  onBackToLobby={() => setCurrentTab('lobby')}
                 />
               )}
 

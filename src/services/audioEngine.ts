@@ -217,7 +217,7 @@ export class AudioEngine {
     }
   }
 
-  // --- 4. Text-to-Speech (Sarvam AI or Browser Fallback) ---
+  // --- 4. Text-to-Speech (Sarvam AI Direct / Proxy / Browser Fallback) ---
   public async speakAI(
     text: string,
     persona: PersonaConfig,
@@ -231,36 +231,82 @@ export class AudioEngine {
     this.callbacks.onAiSpeechStart?.(persona.id);
 
     try {
-      // 1. Try Sarvam AI TTS if key is present
+      // 1. Try Sarvam AI Direct TTS if API key is present
       if (sarvamApiKey) {
         try {
-          const res = await fetch('/api/sarvam/tts', {
+          const validSpeakers = [
+            'aditya', 'ritu', 'ashutosh', 'priya', 'neha', 'rahul', 'pooja', 'rohan',
+            'simran', 'kavya', 'amit', 'dev', 'ishita', 'shreya', 'ratan', 'varun',
+            'manan', 'sumit', 'roopa', 'kabir', 'aayan', 'shubh', 'advait', 'anand',
+            'tanya', 'tarun', 'sunny', 'mani', 'gokul', 'vijay', 'shruti', 'suhani',
+            'mohit', 'kavitha', 'rehan', 'soham', 'rupali'
+          ];
+          const speakerVoice = validSpeakers.includes((persona.sarvamVoice || '').toLowerCase())
+            ? (persona.sarvamVoice || '').toLowerCase()
+            : (persona.voiceGender === 'female' ? 'priya' : 'aditya');
+
+          const payload = {
+            inputs: [text],
+            target_language_code: 'en-IN',
+            speaker: speakerVoice,
+            pitch: 0,
+            pace: persona.rate || 1.0,
+            loudness: 1.5,
+            speech_sample_rate: 22050,
+            enable_preprocessing: true,
+            model: 'bulbul:v3'
+          };
+
+          // Try direct Sarvam API
+          const directRes = await fetch('https://api.sarvam.ai/text-to-speech', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'api-subscription-key': sarvamApiKey
+            },
+            body: JSON.stringify(payload)
+          });
+
+          if (directRes.ok) {
+            const data = await directRes.json();
+            if (data.audios && data.audios.length > 0) {
+              await this.playBase64Audio(data.audios[0], persona.id);
+              return;
+            }
+          }
+        } catch (e) {
+          console.warn('Direct Sarvam TTS call unavailable, checking backend proxy or browser speech:', e);
+        }
+
+        // Try backend proxy if running locally
+        try {
+          const proxyRes = await fetch('/api/sarvam/tts', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               text,
-              speaker: persona.sarvamVoice || 'arvind',
+              speaker: persona.sarvamVoice || 'aditya',
               targetLanguageCode: 'en-IN',
-              pitch: (persona.pitch - 1) * 10,
-              pace: persona.rate,
+              pitch: 0,
+              pace: persona.rate || 1.0,
               apiKey: sarvamApiKey
             })
           });
 
-          if (res.ok) {
-            const data = await res.json();
+          if (proxyRes.ok) {
+            const data = await proxyRes.json();
             if (data.audioBase64) {
               await this.playBase64Audio(data.audioBase64, persona.id);
               return;
             }
           }
-        } catch (e) {
-          console.warn('Sarvam audio playback failed, falling back to Web SpeechSynthesis:', e);
-        }
+        } catch (e) {}
       }
 
-      // 2. Browser SpeechSynthesis Fallback
+      // 2. High-Fidelity Browser SpeechSynthesis Fallback
       await this.speakWithBrowserSynth(text, persona);
+    } catch (err) {
+      console.warn('Speech playback encountered error:', err);
     } finally {
       this.isAiSpeaking = false;
       this.activeAiPersonaId = null;
@@ -299,13 +345,13 @@ export class AudioEngine {
 
       window.speechSynthesis.cancel();
 
+      // Fix for Chrome speech synthesis bug: ensure voices are retrieved
+      const voices = window.speechSynthesis.getVoices();
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.pitch = persona.pitch || 1.0;
       utterance.rate = persona.rate || 1.0;
 
-      // Select suitable voice
-      const voices = window.speechSynthesis.getVoices();
-      const indianVoice = voices.find(v => v.lang.includes('en-IN'));
+      const indianVoice = voices.find(v => v.lang.includes('en-IN') || v.lang.includes('hi-IN'));
       const ukVoice = voices.find(v => v.lang.includes('en-GB'));
       const usVoice = voices.find(v => v.lang.includes('en-US'));
 
@@ -313,17 +359,25 @@ export class AudioEngine {
         const femaleVoice = voices.find(v => (v.name.includes('Female') || v.name.includes('Samantha') || v.name.includes('Zira') || v.name.includes('Google UK English Female')) && v.lang.startsWith('en'));
         utterance.voice = femaleVoice || indianVoice || voices[0];
       } else {
-        const maleVoice = voices.find(v => (v.name.includes('Male') || v.name.includes('Rishi') || v.name.includes('David') || v.name.includes('Daniel')) && v.lang.startsWith('en'));
+        const maleVoice = voices.find(v => (v.name.includes('Male') || v.name.includes('Rishi') || v.name.includes('David') || v.name.includes('Daniel') || v.name.includes('George')) && v.lang.startsWith('en'));
         utterance.voice = maleVoice || indianVoice || ukVoice || usVoice || voices[0];
       }
 
-      utterance.onend = () => {
-        resolve();
+      let hasResolved = false;
+      const finish = () => {
+        if (!hasResolved) {
+          hasResolved = true;
+          resolve();
+        }
       };
 
-      utterance.onerror = () => {
-        resolve();
-      };
+      utterance.onend = finish;
+      utterance.onerror = finish;
+
+      // Fallback timeout in case browser speech synthesis drops onend event
+      const wordCount = text.split(' ').length;
+      const estimatedDurationMs = Math.max(3000, (wordCount / 2.5) * 1000 + 1500);
+      setTimeout(finish, estimatedDurationMs);
 
       window.speechSynthesis.speak(utterance);
     });

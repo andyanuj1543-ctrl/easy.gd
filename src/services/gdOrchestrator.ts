@@ -143,19 +143,21 @@ export class GDOrchestrator {
       senderRole: 'moderator',
       text: `Good morning everyone. Welcome to this discussion round. The topic before the panel is: "${this.settings.topic.title}". The floor is now open for discussion. Let us maintain professional conduct. Please begin.`,
       timestamp: 0,
-      durationSec: 8
+      durationSec: 6
     };
 
     this.messages.push(openingMsg);
     this.callbacks.onNewMessage(openingMsg);
     this.lastSpeakerId = MODERATOR_PERSONA.id;
 
-    // Transition to open discussion after moderator finishes
+    // Transition to open discussion after moderator finishes speaking
     setTimeout(() => {
+      if (!this.isRunning) return;
       this.currentStage = 'open_discussion';
       this.callbacks.onStageChange('open_discussion');
-      this.scheduleNextAiTurn(1800); // Allow student a chance to speak first!
-    }, 4000);
+      // Give student 2.5s to start speaking; if they don't, first AI speaker takes initiative!
+      this.scheduleNextAiTurn(2500);
+    }, 6000);
   }
 
   private async triggerModeratorWarning() {
@@ -304,10 +306,11 @@ export class GDOrchestrator {
         this.callbacks.onNewMessage(msg);
         this.lastSpeakerId = speaker.id;
 
-        // Schedule next turn if in open discussion
+        // Schedule next AI speaker after current finishes talking (durationSec + small natural pause)
         if (this.currentStage === 'open_discussion') {
-          const speechTimeMs = msg.durationSec * 1000 + 1200;
-          this.scheduleNextAiTurn(speechTimeMs);
+          const pauseSec = Math.floor(Math.random() * 2) + 1; // 1-2s natural human breath pause
+          const nextTurnMs = (msg.durationSec + pauseSec) * 1000;
+          this.scheduleNextAiTurn(nextTurnMs);
         }
       }
     } catch (err) {
@@ -329,8 +332,9 @@ export class GDOrchestrator {
       this.lastSpeakerId = speaker.id;
 
       if (this.currentStage === 'open_discussion') {
-        const speechTimeMs = msg.durationSec * 1000 + 1200;
-        this.scheduleNextAiTurn(speechTimeMs);
+        const pauseSec = Math.floor(Math.random() * 2) + 1;
+        const nextTurnMs = (msg.durationSec + pauseSec) * 1000;
+        this.scheduleNextAiTurn(nextTurnMs);
       }
     } finally {
       this.isGeneratingTurn = false;
@@ -342,6 +346,16 @@ export class GDOrchestrator {
     const lastMsg = this.messages[this.messages.length - 1];
     const lastSpeaker = lastMsg ? lastMsg.senderName : 'the room';
 
+    const topicTitle = this.settings.topic.title;
+
+    if (speaker.role === 'leader') {
+      const list = [
+        `Let me step back and structure what we have discussed so far regarding "${topicTitle}". We have heard both operational and societal angles; let us now align on concrete solutions.`,
+        `I appreciate the passion in the room, but let's make sure we give space to everyone. Before we conclude, what is our key priority?`,
+        `Building on what ${lastSpeaker} said, let us frame this into three buckets: policy implementation, economic feasibility, and citizen adoption.`
+      ];
+      return list[Math.floor(Math.random() * list.length)];
+    }
     if (speaker.role === 'dominator') {
       const list = [
         `Look, let me jump in right here. The ground reality is simple—if you don't scale fast, you become completely irrelevant!`,
@@ -360,6 +374,14 @@ export class GDOrchestrator {
       ];
       return list[Math.floor(Math.random() * list.length)];
     }
+    if (speaker.role === 'critic') {
+      const list = [
+        `I see a fundamental flaw in that logic. You are assuming infinite resources and frictionless adoption, which never happens in reality.`,
+        `Have we considered the unintended systemic fallout? If we proceed with ${lastSpeaker}'s model, who bears the liability when errors occur?`,
+        `That sounds appealing in theory, but stress-testing it against actual governance constraints reveals major regulatory bottlenecks.`
+      ];
+      return list[Math.floor(Math.random() * list.length)];
+    }
     if (speaker.role === 'quiet') {
       const list = [
         `If I may add a quieter observation... we shouldn't overlook the grassroots human impact and mental well-being in this shift.`,
@@ -368,23 +390,64 @@ export class GDOrchestrator {
       ];
       return list[Math.floor(Math.random() * list.length)];
     }
-    if (speaker.role === 'drifter') {
+    if (speaker.role === 'supporter' || speaker.role === 'diplomat') {
       const list = [
-        `Yaar, honestly, think about it like an IPL final—you can have all the big data in the world, but momentum wins the match!`,
-        `Point to sahi hai, but let's zoom out a bit. Remember how Blockbuster thought they were invincible until streaming arrived?`,
-        `This reminds me of a real situation during college fests—when chaos strikes, rigid rules always collapse first!`
+        `I completely agree with the candidate’s perspective on this. Extending that thought, collaborative public-private partnerships can bridge that gap.`,
+        `That is a very constructive point made by ${lastSpeaker}. If we combine that with robust quality checks, the entire panel reaches consensus.`,
+        `I want to back that point up—bringing both technical capability and ground-level feedback together makes this model work.`
       ];
       return list[Math.floor(Math.random() * list.length)];
     }
-    if (speaker.role === 'diplomat') {
+    if (speaker.role === 'clown') {
       const list = [
-        `I think Rohan and Priya are highlighting two sides of the same coin. Can we balance aggressive growth with risk mitigation?`,
-        `Let's synthesize what ${lastSpeaker} mentioned—it bridges the short-term tactical need with long-term vision.`,
-        `To find common ground here, maybe a phased rollout satisfies both the innovators and the risk analysts.`
+        `Haha, let me lighten this discussion for a second! If our recruiters were listening to this right now, they'd ask for an ROI statement by yesterday!`,
+        `On a lighter note, imagine explaining this complex framework to my grandmother—she’d just ask if it saves time or costs money!`,
+        `Good point, but let’s not overcomplicate it like a rocket science exam—common sense execution is 90% of the game.`
       ];
       return list[Math.floor(Math.random() * list.length)];
     }
-    return `That brings up a crucial dimension regarding sustainability and accountability for all stakeholders involved.`;
+    if (speaker.role === 'deviator' || speaker.role === 'drifter') {
+      const list = [
+        `This actually reminds me of an interesting case study from the Finnish education model where decentralization created unexpected breakthroughs.`,
+        `Think about it like an IPL championship match—you can formulate the best strategic playbook, but adaptability on the ground wins the game!`,
+        `Looking at historical precedents during the industrial revolution, every technological shock initially creates fear before stabilizing.`
+      ];
+      return list[Math.floor(Math.random() * list.length)];
+    }
+    if (speaker.role === 'philosopher') {
+      const list = [
+        `Let us examine the foundational ethical premise here: is efficiency our ultimate moral compass, or is it human dignity?`,
+        `Beyond the commercial balance sheet, what kind of societal contract are we implicitly endorsing through this policy?`,
+        `When we evaluate ${lastSpeaker}'s point through first principles, we must ask whether technology serves humanity or vice versa.`
+      ];
+      return list[Math.floor(Math.random() * list.length)];
+    }
+    if (speaker.role === 'databomb') {
+      const list = [
+        `Let me inject some hard empirical numbers: NASSCOM and Gartner predict a 34% productivity variance within the first 18 months of rollout.`,
+        `According to recent economic surveys, capital expenditure efficiency improves by nearly 2.4x when structured frameworks are adopted.`,
+        `The statistics are undeniable here: over 68% of pilot implementations fail purely due to lack of middle-management change integration.`
+      ];
+      return list[Math.floor(Math.random() * list.length)];
+    }
+    if (speaker.role === 'emotional') {
+      const list = [
+        `This is not just an intellectual debate—it directly touches real families, livelihoods, and youth aspiring for stability!`,
+        `We cannot reduce human lives and aspirations to cold cells on a spreadsheet. Where is the empathy in our proposed solution?`,
+        `I feel deeply that unless we protect the most vulnerable stakeholders first, any economic victory is hollow.`
+      ];
+      return list[Math.floor(Math.random() * list.length)];
+    }
+    if (speaker.role === 'devilsadvocate') {
+      const list = [
+        `Let me deliberately challenge the room's consensus: what if our starting assumption is completely backwards?`,
+        `Everyone seems to agree on ${lastSpeaker}'s thesis, but what happens during a severe black swan event when the foundation collapses?`,
+        `I’m playing devil’s advocate here: why are we even forcing this change if the status quo already delivers 80% of the benefits at half the cost?`
+      ];
+      return list[Math.floor(Math.random() * list.length)];
+    }
+
+    return `Building on what ${lastSpeaker} highlighted, sustainable implementation requires both stakeholder alignment and transparent oversight.`;
   }
 
   public getMessages(): GDMessage[] {
