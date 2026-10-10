@@ -37,6 +37,10 @@ export type PersonaRole =
   | 'supporter' 
   | 'clown' 
   | 'deviator' 
+  | 'philosopher'
+  | 'databomb'
+  | 'emotional'
+  | 'devilsadvocate'
   | 'diplomat';
 
 export interface PersonaConfig {
