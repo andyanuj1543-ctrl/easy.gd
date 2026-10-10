@@ -30,6 +30,27 @@ app.get('/api/health', (req, res) => {
 // API Routes
 app.use('/api', apiRouter);
 
+// Serve static frontend files in production
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const distPath = path.join(__dirname, '../dist');
+
+app.use(express.static(distPath));
+
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api')) {
+    return next();
+  }
+  res.sendFile(path.join(distPath, 'index.html'), (err) => {
+    if (err) {
+      next();
+    }
+  });
+});
+
 app.listen(PORT, () => {
-  console.log(`🚀 easy.gd backend running at http://localhost:${PORT}`);
+  console.log(`🚀 easy.gd server running at http://localhost:${PORT}`);
 });
