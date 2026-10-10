@@ -238,9 +238,21 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({ report, onRe
                   <p className="text-[11px] text-slate-600 leading-normal mt-1">
                     {area.notes}
                   </p>
+                  {area.formula && (
+                    <div className="mt-2 pt-1.5 border-t border-slate-200/80 space-y-1">
+                      <div className="text-[9px] font-mono text-indigo-700 bg-indigo-50/80 px-1.5 py-0.5 rounded border border-indigo-100">
+                        Formula: {area.formula}
+                      </div>
+                      {area.breakdown && (
+                        <div className="text-[9px] text-slate-500 font-mono">
+                          {area.breakdown}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
                 {/* Visual score bar */}
-                <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden mt-1">
                   <div 
                     className={`h-full ${isTop ? 'bg-emerald-500' : isLow ? 'bg-rose-500' : 'bg-indigo-600'}`}
                     style={{ width: `${Math.min(100, area.score * 10)}%` }}

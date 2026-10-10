@@ -267,26 +267,39 @@ export class GDOrchestrator {
     this.callbacks.onSpeakerActive(speaker.id);
 
     try {
-      const res = await fetch('/api/chat/turn', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          topic: this.settings.topic,
-          messages: this.messages,
-          speaker,
-          allPersonas: this.participants,
-          studentName: this.settings.studentName,
-          roomStage: this.currentStage,
-          apiKey: this.apiKey,
-          provider: this.provider
-        })
-      });
-
       let text = '';
-      if (res.ok) {
-        const data = await res.json();
-        text = data.text;
-      } else {
+
+      // 1. Try Direct Fast Client LLM if API Key is configured
+      if (this.apiKey) {
+        text = await this.generateDirectLlmTurn(speaker);
+      }
+
+      // 2. If no API key or LLM failed, try backend proxy
+      if (!text) {
+        try {
+          const res = await fetch('/api/chat/turn', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              topic: this.settings.topic,
+              messages: this.messages,
+              speaker,
+              allPersonas: this.participants,
+              studentName: this.settings.studentName,
+              roomStage: this.currentStage,
+              apiKey: this.apiKey,
+              provider: this.provider
+            })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            text = data.text;
+          }
+        } catch (e) {}
+      }
+
+      // 3. High-Fidelity Humanized Dynamic Fallback
+      if (!text) {
         text = this.generateFallbackTurn(speaker);
       }
 
@@ -340,6 +353,108 @@ export class GDOrchestrator {
       this.isGeneratingTurn = false;
       this.callbacks.onSpeakerActive(null);
     }
+  }
+
+  private async generateDirectLlmTurn(speaker: PersonaConfig): Promise<string> {
+    if (!this.apiKey) return '';
+
+    const recentTranscript = this.messages.slice(-6).map(m => {
+      return `${m.senderName} (${m.senderRole}): "${m.text}"`;
+    }).join('\n');
+
+    const lastMsg = this.messages[this.messages.length - 1];
+    const lastSpeakerName = lastMsg ? lastMsg.senderName : 'the room';
+
+    const systemPrompt = `You are playing ${speaker.name} (${speaker.archetype}) in an authentic Indian Campus Placement Group Discussion.
+Personality Directives:
+${speaker.instructions}
+
+Topic: "${this.settings.topic.title}" - ${this.settings.topic.description}
+Candidate's Name: ${this.settings.studentName}
+Last Speaker was: ${lastSpeakerName}
+
+CRITICAL RULES FOR REALISTIC HUMAN SPOKEN DIALOGUE:
+1. Speak NATURALLY in 1 to 2 spoken sentences (maximum 28 words).
+2. React DIRECTLY to what was just said! Build on or disagree with ${lastSpeakerName} or ${this.settings.studentName}.
+3. Sound conversational: use natural transitions ("I hear that point, but...", "Building on what was just said...", "Let's look at the numbers...").
+4. Output ONLY the raw spoken dialogue. Never include speaker names, bullet points, quotes, or markdown.`;
+
+    const userPrompt = `Recent context:\n${recentTranscript || '[Discussion just opened]'}\n\nSpeak now as ${speaker.name} in 1-2 sharp spoken sentences:`;
+
+    // A. Groq (Ultra fast ~300ms)
+    if (this.provider === 'groq' || this.apiKey.startsWith('gsk_')) {
+      try {
+        const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.apiKey}`
+          },
+          body: JSON.stringify({
+            model: 'llama-3.3-70b-versatile',
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: userPrompt }
+            ],
+            temperature: 0.8,
+            max_tokens: 60
+          })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const clean = data.choices?.[0]?.message?.content?.replace(/^["']|["']$/g, '').trim();
+          if (clean) return clean;
+        }
+      } catch (e) {}
+    }
+
+    // B. Grok / xAI
+    if (this.provider === 'grok' || (!this.provider && this.apiKey.startsWith('xai-'))) {
+      try {
+        const res = await fetch('https://api.x.ai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.apiKey}`
+          },
+          body: JSON.stringify({
+            model: 'grok-2-latest',
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: userPrompt }
+            ],
+            temperature: 0.8,
+            max_tokens: 60
+          })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const clean = data.choices?.[0]?.message?.content?.replace(/^["']|["']$/g, '').trim();
+          if (clean) return clean;
+        }
+      } catch (e) {}
+    }
+
+    // C. Gemini
+    if (this.provider === 'gemini' || this.apiKey.startsWith('AIza')) {
+      try {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${this.apiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ role: 'user', parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] }],
+            generationConfig: { temperature: 0.8, maxOutputTokens: 60 }
+          })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const clean = data.candidates?.[0]?.content?.parts?.[0]?.text?.replace(/^["']|["']$/g, '').trim();
+          if (clean) return clean;
+        }
+      } catch (e) {}
+    }
+
+    return '';
   }
 
   private generateFallbackTurn(speaker: PersonaConfig): string {

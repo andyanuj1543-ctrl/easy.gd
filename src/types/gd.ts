@@ -105,6 +105,8 @@ export interface ScorecardArea {
   name: 'Content' | 'Communication' | 'Listening' | 'Teamwork' | 'Leadership' | 'Body Language' | 'Time Management' | 'Emotional Maturity';
   score: number; // 0 to 10
   notes: string;
+  formula?: string; // Mathematical formula used to compute this score
+  breakdown?: string; // Breakdown of inputs from the candidate's actual speech
 }
 
 export interface MissedOpportunity {

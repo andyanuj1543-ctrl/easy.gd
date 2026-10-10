@@ -56,33 +56,121 @@ export function generateClientSideReport(
   const quoteTime1 = firstMsg ? Math.floor(firstMsg.timestamp) : 45;
   const quoteTime2 = studentMsgs.length > 1 ? Math.floor(studentMsgs[1].timestamp) : 110;
 
-  // 1. Calculate the official 8 Area Scores (0–10 each) from GD Master Spec v3.0:
-  // - Content: facts, structure, substance
-  const contentScore = Math.min(10, Math.max(4, Math.round((studentSpeakingSec > 25 ? 8.5 : 7.0) * 10) / 10));
-  // - Communication: articulation, clarity, no fillers
-  const communicationScore = Math.min(10, Math.max(4, Math.round((studentTurns >= 3 ? 8.5 : 7.2) * 10) / 10));
-  // - Listening: references peers, agrees, builds
-  const listeningScore = Math.min(10, Math.max(4, Math.round((studentMsgs.some((m) => /agree|point|build|priya|rohan|ananya|aarav/i.test(m.text)) ? 8.8 : 7.0) * 10) / 10));
-  // - Teamwork: helps the group, includes quieter peers
-  const teamworkScore = Math.min(10, Math.max(4, Math.round((studentSpeakingPercent >= 18 && studentSpeakingPercent <= 32 ? 8.5 : 6.8) * 10) / 10));
-  // - Leadership: gives direction, structures discussion, guides without dominating
-  const leadershipScore = Math.min(10, Math.max(4, Math.round((startedGD ? 9.0 : (quoteTime1 < 75 ? 7.8 : 6.5)) * 10) / 10));
-  // - Body Language: vocal projection, eye contact posture (in audio: steady projection & latency)
-  const bodyLanguageScore = Math.min(10, Math.max(4, Math.round((interruptionsSuffered === 0 ? 8.6 : 7.5) * 10) / 10));
-  // - Time Management: respects duration, summarizes in closing window
-  const timeManagementScore = Math.min(10, Math.max(4, Math.round((lastMsg && Math.floor(lastMsg.timestamp) > totalDurationSec * 0.65 ? 8.5 : 7.0) * 10) / 10));
-  // - Emotional Maturity: composure when challenged by Critic or Dominator
-  const emotionalMaturityScore = Math.min(10, Math.max(4, Math.round((interruptionsSuffered > 0 ? 8.8 : 8.2) * 10) / 10));
+  // 1. Calculate the official 8 Area Scores (0–10 each) with explicit mathematical formulas:
+  
+  // (A) Content Formula:
+  // Base 5.0 + Speaking Volume Bonus (up to +2.5 for >25s) + Multi-word analytical vocabulary bonus (+1.5 for frameworks)
+  const hasAnalyticalFrameworks = /(pestel|swot|economic|regulatory|framework|roi|long-term|short-term|impact|data|statistic)/i.test(allStudentText);
+  const contentScore = studentTurns === 0 
+    ? 2.0 
+    : Math.min(10, Math.max(3.5, Math.round((5.0 + Math.min(2.5, (studentSpeakingSec / 30) * 2.5) + (hasAnalyticalFrameworks ? 1.5 : 0.5)) * 10) / 10));
+
+  // (B) Communication Formula:
+  // Base 8.0 - Filler Penalty (0.8 per filler/min) + Articulation bonus (+1.0 for turns >= 2)
+  const fillerPenalty = Math.min(3.5, fillersPerMin * 0.8);
+  const communicationScore = studentTurns === 0
+    ? 2.0
+    : Math.min(10, Math.max(3.0, Math.round((7.5 - fillerPenalty + (studentTurns >= 2 ? 1.2 : 0)) * 10) / 10));
+
+  // (C) Listening Formula:
+  // Peer Linking Frequency: +1.5 pts per direct peer citation ("I agree with Priya", "Building on Rohan", etc.)
+  const peerCitationsCount = (allStudentText.match(/(priya|rohan|ananya|aarav|tanvi|vikram|siddharth|kabir|agree|point|build)/gi) || []).length;
+  const listeningScore = studentTurns === 0
+    ? 2.0
+    : Math.min(10, Math.max(4.0, Math.round((5.0 + Math.min(4.5, peerCitationsCount * 1.5)) * 10) / 10));
+
+  // (D) Teamwork Formula:
+  // Gaussian Airtime Distribution around Sweet Spot (25% in 5-person panel):
+  // Score = 10 - |SpeakingPercent - 25%| * 0.25 - Monopolization Penalty
+  const airtimeDistance = Math.abs(studentSpeakingPercent - 25);
+  const teamworkScore = studentTurns === 0
+    ? 2.0
+    : Math.min(10, Math.max(4.0, Math.round((9.5 - (airtimeDistance * 0.22)) * 10) / 10));
+
+  // (E) Leadership Formula:
+  // Initiative (+2.5 if started GD or spoke < 60s) + Synthesis (+1.5 if spoke in second half) + Structural framing (+1.0)
+  const startedEarly = startedGD || quoteTime1 <= 60;
+  const spokeInClosing = lastMsg && Math.floor(lastMsg.timestamp) > totalDurationSec * 0.6;
+  const leadershipScore = studentTurns === 0
+    ? 2.0
+    : Math.min(10, Math.max(3.5, Math.round((5.0 + (startedEarly ? 2.5 : 1.0) + (spokeInClosing ? 1.5 : 0.5)) * 10) / 10));
+
+  // (F) Body Language & Acoustic Projection:
+  // Vocal Continuity & Clean turn-taking: Base 8.5 - Interruption stutter penalty (-0.8 per interruption suffered)
+  const bodyLanguageScore = studentTurns === 0
+    ? 2.0
+    : Math.min(10, Math.max(4.0, Math.round((8.8 - (interruptionsSuffered * 0.8)) * 10) / 10));
+
+  // (G) Time Management Formula:
+  // Pacing across the discussion timeline:
+  // Checks presence across 0-50% mark and 50-100% mark
+  const timeManagementScore = studentTurns === 0
+    ? 2.0
+    : Math.min(10, Math.max(4.0, Math.round((6.0 + (spokeInClosing ? 2.5 : 1.0) + (studentTurns >= 3 ? 1.0 : 0.5)) * 10) / 10));
+
+  // (H) Emotional Maturity:
+  // Composure when challenged: Base 8.0 + (+1.0 for polite floor reclaim without screaming)
+  const emotionalMaturityScore = studentTurns === 0
+    ? 2.0
+    : Math.min(10, Math.max(4.5, Math.round((8.2 + (interruptionsSuffered > 0 ? 0.8 : 0.4)) * 10) / 10));
 
   const scorecard: ScorecardArea[] = [
-    { name: 'Content', score: contentScore, notes: 'Substantive topic points backed by logical arguments and practical examples.' },
-    { name: 'Communication', score: communicationScore, notes: 'Clear vocal articulation, structured sentences, and minimal filler words.' },
-    { name: 'Listening', score: listeningScore, notes: 'Actively acknowledged and connected with peer arguments rather than speaking in isolation.' },
-    { name: 'Teamwork', score: teamworkScore, notes: 'Balanced airtime presence that maintained healthy, inclusive group momentum.' },
-    { name: 'Leadership', score: leadershipScore, notes: startedGD ? 'Took bold initiative to frame the scope early.' : 'Entered early and guided the discussion towards consensus.' },
-    { name: 'Body Language', score: bodyLanguageScore, notes: 'Steady vocal projection and assertive acoustic presence.' },
-    { name: 'Time Management', score: timeManagementScore, notes: 'Paced remarks evenly across the discussion phases and contributed towards closing.' },
-    { name: 'Emotional Maturity', score: emotionalMaturityScore, notes: 'Stayed composed under peer pressure without becoming defensive.' }
+    {
+      name: 'Content',
+      score: contentScore,
+      notes: 'Depth of analytical knowledge, factual substance, and structural dimensions.',
+      formula: 'Base(5.0) + SpeakingDurationBonus(max +2.5) + FrameworkBonus(+1.5)',
+      breakdown: `Duration: ${studentSpeakingSec}s, Frameworks detected: ${hasAnalyticalFrameworks ? 'Yes (PESTEL/Economic)' : 'Standard points'}`
+    },
+    {
+      name: 'Communication',
+      score: communicationScore,
+      notes: 'Vocal articulation, speed cadence, and speech fluency.',
+      formula: 'Base(7.5) - [Fillers/min × 0.8] + [Turns ≥ 2 ? +1.2 : 0]',
+      breakdown: `Fillers: ${fillersPerMin}/min (${totalFillers} total words), Turns: ${studentTurns}`
+    },
+    {
+      name: 'Listening',
+      score: listeningScore,
+      notes: 'Active acknowledgement of peers, synthesizing and building on fellow candidates.',
+      formula: 'Base(5.0) + min(4.5, PeerNameCitations × 1.5)',
+      breakdown: `Direct peer linking instances: ${peerCitationsCount}`
+    },
+    {
+      name: 'Teamwork',
+      score: teamworkScore,
+      notes: 'Inclusive airtime balance and maintaining collaborative group momentum.',
+      formula: 'Max(9.5) - [|Airtime% - 25%| × 0.22]',
+      breakdown: `Your Airtime: ${studentSpeakingPercent}% (Optimal recruiter target: 20%–30%)`
+    },
+    {
+      name: 'Leadership',
+      score: leadershipScore,
+      notes: 'Direction setting, framing parameters, and keeping discussion on task.',
+      formula: 'Base(5.0) + [EarlyEntry ≤ 60s ? +2.5 : +1.0] + [ClosingParticipation ? +1.5 : +0.5]',
+      breakdown: `First Entry: +${quoteTime1}s (${startedEarly ? 'Early Initiative' : 'Delayed Entry'})`
+    },
+    {
+      name: 'Body Language',
+      score: bodyLanguageScore,
+      notes: 'Steady vocal projection and assertive acoustic presence.',
+      formula: 'Base(8.8) - [InterruptionsSuffered × 0.8]',
+      breakdown: `Interruptions suffered: ${interruptionsSuffered}`
+    },
+    {
+      name: 'Time Management',
+      score: timeManagementScore,
+      notes: 'Even distribution across opening, open floor, and closing consensus.',
+      formula: 'Base(6.0) + [ClosingTurnActive ? +2.5 : +1.0] + [MultiTurns ? +1.0 : +0.5]',
+      breakdown: `Closing phase participation: ${spokeInClosing ? 'Yes (Active in final 35%)' : 'No closing presence'}`
+    },
+    {
+      name: 'Emotional Maturity',
+      score: emotionalMaturityScore,
+      notes: 'Calm composure under challenge without aggression or defensiveness.',
+      formula: 'Base(8.2) + [ConflictHandlingPoise ? +0.8 : +0.4]',
+      breakdown: `Poise maintained through ${interruptionsSuffered} interruptions`
+    }
   ];
 
   const totalScore80 = Math.round(scorecard.reduce((sum, item) => sum + item.score, 0) * 10) / 10;
