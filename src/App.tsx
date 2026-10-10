@@ -12,6 +12,7 @@ import { GDRoomView } from './components/room/GDRoomView';
 import { DiagnosticReport } from './components/report/DiagnosticReport';
 import { AudioEngine } from './services/audioEngine';
 import { GDOrchestrator } from './services/gdOrchestrator';
+import { generateClientSideReport } from './services/clientReportGenerator';
 import { Loader2 } from 'lucide-react';
 
 export const App: React.FC = () => {
@@ -237,9 +238,19 @@ export const App: React.FC = () => {
       if (res.ok) {
         const data = await res.json();
         setReport(data);
+      } else {
+        throw new Error('Backend evaluation endpoint returned status ' + res.status);
       }
     } catch (e) {
-      console.warn('Error fetching report:', e);
+      console.warn('Backend report evaluation offline, generating client-side report dossier:', e);
+      const fallbackReport = generateClientSideReport(
+        settings?.topic?.title || 'Group Discussion',
+        currentMsgs,
+        settings?.studentName || 'Candidate',
+        (settings?.durationMins || 5) * 60,
+        participants
+      );
+      setReport(fallbackReport);
     } finally {
       setStage('report');
     }

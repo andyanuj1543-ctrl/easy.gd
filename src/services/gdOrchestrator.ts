@@ -280,10 +280,15 @@ export class GDOrchestrator {
         })
       });
 
+      let text = '';
       if (res.ok) {
         const data = await res.json();
-        const text = data.text;
+        text = data.text;
+      } else {
+        text = this.generateFallbackTurn(speaker);
+      }
 
+      if (text) {
         const elapsedSec = this.totalDurationSec - this.remainingSec;
         const msg: GDMessage = {
           id: `msg-${Date.now()}`,
@@ -301,17 +306,85 @@ export class GDOrchestrator {
 
         // Schedule next turn if in open discussion
         if (this.currentStage === 'open_discussion') {
-          // Calculate speaking time duration so AI doesn't talk over itself
           const speechTimeMs = msg.durationSec * 1000 + 1200;
           this.scheduleNextAiTurn(speechTimeMs);
         }
       }
     } catch (err) {
-      console.warn('Turn generation error:', err);
+      console.warn('API turn generation offline, using client fallback:', err);
+      const fallbackText = this.generateFallbackTurn(speaker);
+      const elapsedSec = this.totalDurationSec - this.remainingSec;
+      const msg: GDMessage = {
+        id: `msg-${Date.now()}`,
+        senderId: speaker.id,
+        senderName: speaker.name,
+        senderRole: speaker.role,
+        text: fallbackText,
+        timestamp: elapsedSec,
+        durationSec: Math.max(4, Math.round(fallbackText.split(' ').length / 2.3))
+      };
+
+      this.messages.push(msg);
+      this.callbacks.onNewMessage(msg);
+      this.lastSpeakerId = speaker.id;
+
+      if (this.currentStage === 'open_discussion') {
+        const speechTimeMs = msg.durationSec * 1000 + 1200;
+        this.scheduleNextAiTurn(speechTimeMs);
+      }
     } finally {
       this.isGeneratingTurn = false;
       this.callbacks.onSpeakerActive(null);
     }
+  }
+
+  private generateFallbackTurn(speaker: PersonaConfig): string {
+    const lastMsg = this.messages[this.messages.length - 1];
+    const lastSpeaker = lastMsg ? lastMsg.senderName : 'the room';
+
+    if (speaker.role === 'dominator') {
+      const list = [
+        `Look, let me jump in right here. The ground reality is simple—if you don't scale fast, you become completely irrelevant!`,
+        `I strongly disagree with the cautious approach. In this competitive landscape, waiting around is pure suicide!`,
+        `Let me take the lead on this point. What ${lastSpeaker} said misses the commercial execution angle entirely!`,
+        `Building directly on that, the most urgent factor here is speed to market, not endless analysis.`
+      ];
+      return list[Math.floor(Math.random() * list.length)];
+    }
+    if (speaker.role === 'analyst') {
+      const list = [
+        `I hear that perspective, but looking at empirical market data, the unit economics do not substantiate that claim.`,
+        `Let's structure this systematically: first, the regulatory risk profile, and second, customer retention economics.`,
+        `Interesting point from ${lastSpeaker}, but what concrete benchmark do we have to validate that adoption rate?`,
+        `To bring some analytical rigor here: without a clear break-even timeline, this strategy carries severe downside exposure.`
+      ];
+      return list[Math.floor(Math.random() * list.length)];
+    }
+    if (speaker.role === 'quiet') {
+      const list = [
+        `If I may add a quieter observation... we shouldn't overlook the grassroots human impact and mental well-being in this shift.`,
+        `I feel what ${lastSpeaker} pointed out is valid, but organizational trust is much harder to rebuild once lost.`,
+        `Perhaps we can look at the long-term cultural fallout rather than just short-term quarterly KPIs.`
+      ];
+      return list[Math.floor(Math.random() * list.length)];
+    }
+    if (speaker.role === 'drifter') {
+      const list = [
+        `Yaar, honestly, think about it like an IPL final—you can have all the big data in the world, but momentum wins the match!`,
+        `Point to sahi hai, but let's zoom out a bit. Remember how Blockbuster thought they were invincible until streaming arrived?`,
+        `This reminds me of a real situation during college fests—when chaos strikes, rigid rules always collapse first!`
+      ];
+      return list[Math.floor(Math.random() * list.length)];
+    }
+    if (speaker.role === 'diplomat') {
+      const list = [
+        `I think Rohan and Priya are highlighting two sides of the same coin. Can we balance aggressive growth with risk mitigation?`,
+        `Let's synthesize what ${lastSpeaker} mentioned—it bridges the short-term tactical need with long-term vision.`,
+        `To find common ground here, maybe a phased rollout satisfies both the innovators and the risk analysts.`
+      ];
+      return list[Math.floor(Math.random() * list.length)];
+    }
+    return `That brings up a crucial dimension regarding sustainability and accountability for all stakeholders involved.`;
   }
 
   public getMessages(): GDMessage[] {
