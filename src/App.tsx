@@ -46,11 +46,12 @@ export const App: React.FC = () => {
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
   const [apiKeys, setApiKeys] = useState<ApiKeysConfig>(() => {
     const saved = localStorage.getItem('easy_gd_api_keys');
-    return saved ? JSON.parse(saved) : {
-      grokApiKey: '',
-      sarvamApiKey: '',
-      groqApiKey: '',
-      geminiApiKey: ''
+    const parsed = saved ? JSON.parse(saved) : {};
+    return {
+      grokApiKey: parsed.grokApiKey || '',
+      sarvamApiKey: parsed.sarvamApiKey || 'sk_711jrvsx_vsVzJQydggxzeavJ6iiP96cl',
+      groqApiKey: parsed.groqApiKey || '',
+      geminiApiKey: parsed.geminiApiKey || ''
     };
   });
 

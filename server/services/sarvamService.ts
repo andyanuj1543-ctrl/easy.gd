@@ -32,16 +32,28 @@ export async function synthesizeSarvamSpeech(params: SarvamTTSParams): Promise<{
   }
 
   try {
+    // Map voices to valid Sarvam bulbul:v3 speaker names:
+    // Available: aditya, ritu, ashutosh, priya, neha, rahul, pooja, rohan, simran, kavya, amit, dev, ishita, shreya, ratan, varun, manan, sumit, roopa, kabir, aayan, shubh, advait, anand, tanya, tarun, sunny, mani, gokul, vijay, shruti, suhani, mohit, kavitha, rehan, soham, rupali
+    const validSpeakers = [
+      'aditya', 'ritu', 'ashutosh', 'priya', 'neha', 'rahul', 'pooja', 'rohan',
+      'simran', 'kavya', 'amit', 'dev', 'ishita', 'shreya', 'ratan', 'varun',
+      'manan', 'sumit', 'roopa', 'kabir', 'aayan', 'shubh', 'advait', 'anand',
+      'tanya', 'tarun', 'sunny', 'mani', 'gokul', 'vijay', 'shruti', 'suhani',
+      'mohit', 'kavitha', 'rehan', 'soham', 'rupali'
+    ];
+
+    const chosenSpeaker = validSpeakers.includes(speaker.toLowerCase()) ? speaker.toLowerCase() : 'aditya';
+
     const payload = {
       inputs: [text],
       target_language_code: targetLanguageCode,
-      speaker: speaker,
+      speaker: chosenSpeaker,
       pitch: pitch,
       pace: pace,
       loudness: 1.5,
       speech_sample_rate: 22050,
       enable_preprocessing: true,
-      model: 'bulbul:v1'
+      model: 'bulbul:v3'
     };
 
     const res = await fetch('https://api.sarvam.ai/text-to-speech', {
