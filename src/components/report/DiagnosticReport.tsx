@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import { 
   Award, TrendingUp, Clock, MessageSquare, CheckCircle, AlertTriangle, 
-  Quote, Lightbulb, RefreshCw, Printer, Shield, ChevronRight, UserCheck 
+  Quote, Lightbulb, RefreshCw, Printer, Shield, ChevronRight, UserCheck, BarChart3 
 } from 'lucide-react';
 import { GDReport } from '../../types/gd';
 
@@ -15,8 +15,8 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({ report, onRe
   useEffect(() => {
     if (report.overallScore >= 70) {
       confetti({
-        particleCount: 80,
-        spread: 70,
+        particleCount: 85,
+        spread: 75,
         origin: { y: 0.6 }
       });
     }
@@ -25,13 +25,13 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({ report, onRe
   const getVerdictBadge = (rec: string) => {
     switch (rec) {
       case 'Strong Hire':
-        return <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Strong Hire (Top 10%)</span>;
+        return <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm">Strong Hire (Top 10%)</span>;
       case 'Hire':
-        return <span className="bg-blue-500/20 text-blue-300 border border-blue-500/40 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Hire (Advancing to PI)</span>;
+        return <span className="bg-blue-500/20 text-blue-300 border border-blue-500/40 px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm">Hire (Advancing to PI)</span>;
       case 'Borderline / Needs Polish':
-        return <span className="bg-amber-500/20 text-amber-300 border border-amber-500/40 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Borderline / Needs Polish</span>;
+        return <span className="bg-amber-500/20 text-amber-300 border border-amber-500/40 px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm">Borderline / Needs Polish</span>;
       default:
-        return <span className="bg-rose-500/20 text-rose-300 border border-rose-500/40 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Do Not Advance</span>;
+        return <span className="bg-rose-500/20 text-rose-300 border border-rose-500/40 px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm">Do Not Advance</span>;
     }
   };
 
@@ -42,12 +42,12 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({ report, onRe
   };
 
   const metricsList = [
-    report.metrics.initiativeAndOpening,
-    report.metrics.ideaQualityAndFrameworks,
-    report.metrics.synthesizingAndListening,
-    report.metrics.floorControlAndPacing,
-    report.metrics.handlingInterruptionAndConflict,
-    report.metrics.conclusionAndSummary,
+    report.metrics?.initiativeAndOpening,
+    report.metrics?.ideaQualityAndFrameworks,
+    report.metrics?.synthesizingAndListening,
+    report.metrics?.floorControlAndPacing,
+    report.metrics?.handlingInterruptionAndConflict,
+    report.metrics?.conclusionAndSummary,
   ].filter(Boolean);
 
   const formatTimestamp = (secs: number) => {
@@ -59,14 +59,15 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({ report, onRe
   return (
     <div className="max-w-5xl mx-auto px-4 py-8 space-y-8 animate-fade-in print:p-0">
       
-      {/* Top Banner & Verdict Card */}
+      {/* Top Banner & Assessment Dossier Card */}
       <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden backdrop-blur-md">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-6 border-b border-slate-800">
           <div>
-            <div className="text-xs font-medium text-emerald-400 uppercase tracking-widest mb-1">
-              Campus Placement Evaluation Dossier
+            <div className="text-xs font-semibold text-emerald-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+              <Award className="w-4 h-4 text-emerald-400" />
+              <span>Campus Placement Evaluation Dossier</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black text-white">
+            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
               {report.studentName}'s Recruiter Report
             </h1>
             <p className="text-xs text-slate-400 mt-1">
@@ -74,7 +75,7 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({ report, onRe
             </p>
           </div>
 
-          <div className="flex sm:flex-col items-center sm:items-end justify-between gap-2">
+          <div className="flex sm:flex-col items-center sm:items-end justify-between gap-2.5">
             {getVerdictBadge(report.hiringRecommendation)}
             <div className="text-right">
               <span className="text-3xl sm:text-4xl font-black font-mono text-emerald-400">
@@ -91,13 +92,13 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({ report, onRe
             <UserCheck className="w-4 h-4 text-emerald-400" />
             <span>Recruiter Panel Feedback</span>
           </h3>
-          <p className="text-xs sm:text-sm text-slate-300 leading-relaxed bg-slate-950/60 p-4 rounded-2xl border border-slate-800/80">
+          <p className="text-xs sm:text-sm text-slate-300 leading-relaxed bg-slate-950/70 p-4 rounded-2xl border border-slate-800/80">
             {report.executiveSummary}
           </p>
         </div>
       </div>
 
-      {/* Speaking Airtime & Participation Breakdown */}
+      {/* Speaking Airtime & Floor Distribution */}
       <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
@@ -106,18 +107,18 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({ report, onRe
               <span>Airtime & Floor Distribution</span>
             </h3>
             <p className="text-xs text-slate-400">
-              Recommended placement sweet spot is <strong>20% – 30%</strong> in a 5-person panel.
+              Target placement benchmark: <strong>20% – 30%</strong> in a 5-person panel.
             </p>
           </div>
 
-          <div className="text-xs font-mono text-emerald-400 bg-emerald-950/40 border border-emerald-500/30 px-3 py-1.5 rounded-xl">
+          <div className="text-xs font-mono font-bold text-emerald-400 bg-emerald-950/40 border border-emerald-500/30 px-3 py-1.5 rounded-xl shadow-inner">
             Your Airtime: {report.studentSpeakingPercent}% ({report.studentSpeakingSec}s)
           </div>
         </div>
 
         {/* Multi-segment participation progress bar */}
-        <div className="w-full h-4 bg-slate-950 rounded-full overflow-hidden flex border border-slate-800">
-          {report.participantBreakdown.map((p, idx) => {
+        <div className="w-full h-4 bg-slate-950 rounded-full overflow-hidden flex border border-slate-800 shadow-inner">
+          {report.participantBreakdown?.map((p, idx) => {
             const colors = ['bg-emerald-500', 'bg-red-500', 'bg-cyan-500', 'bg-teal-500', 'bg-amber-500', 'bg-indigo-500'];
             const color = colors[idx % colors.length];
             return (
@@ -133,10 +134,10 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({ report, onRe
 
         {/* Participant Legend Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2.5 pt-2">
-          {report.participantBreakdown.map((p, idx) => (
+          {report.participantBreakdown?.map((p) => (
             <div key={p.id} className="bg-slate-950/60 border border-slate-800 p-2.5 rounded-xl text-center space-y-0.5">
               <div className="text-xs font-bold text-slate-200 truncate">{p.name}</div>
-              <div className="text-[10px] text-slate-400">{p.speakingPercent}% airtime</div>
+              <div className="text-[10px] text-slate-400 font-semibold">{p.speakingPercent}% airtime</div>
               <div className="text-[10px] text-slate-500 font-mono">{p.turnCount} turns</div>
             </div>
           ))}
@@ -159,7 +160,7 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({ report, onRe
           {metricsList.map((m, idx) => (
             <div
               key={idx}
-              className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-lg space-y-3.5 flex flex-col justify-between"
+              className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-lg space-y-3.5 flex flex-col justify-between hover:border-slate-700 transition-colors"
             >
               <div>
                 <div className="flex items-center justify-between pb-2 border-b border-slate-800/80">
@@ -186,7 +187,7 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({ report, onRe
                       className="bg-slate-950/80 rounded-2xl p-3 border border-slate-800/80 space-y-1.5"
                     >
                       <div className="flex items-center justify-between text-[10px] text-slate-400">
-                        <span className="font-medium text-emerald-400 flex items-center gap-1">
+                        <span className="font-semibold text-emerald-400 flex items-center gap-1">
                           <Quote className="w-3 h-3" /> Quoted Transcript Moment
                         </span>
                         <span className="font-mono">+{formatTimestamp(q.timestampSec)}</span>
@@ -210,7 +211,7 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({ report, onRe
       {report.missedOpportunities && report.missedOpportunities.length > 0 && (
         <div className="bg-slate-900 border border-amber-500/30 rounded-3xl p-6 sm:p-7 shadow-xl space-y-4">
           <div>
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] font-semibold">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] font-bold">
               <Lightbulb className="w-3.5 h-3.5" /> High-Impact Placement Replay
             </div>
             <h3 className="text-base sm:text-lg font-bold text-white mt-1">
@@ -231,8 +232,8 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({ report, onRe
                   <span className="font-semibold text-slate-300">
                     Situation at +{formatTimestamp(opp.timestampSec)}
                   </span>
-                  <span className="text-[11px] font-mono text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
-                    {opp.strategicPrinciple}
+                  <span className="text-[11px] font-mono text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 font-bold">
+                    {opp.strategicPrinciple || (opp as any).strategicPivot || 'The Strategic Pivot'}
                   </span>
                 </div>
 
