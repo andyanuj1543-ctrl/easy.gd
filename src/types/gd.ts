@@ -15,12 +15,34 @@ export type GDFormat =
   | 'controversial' 
   | 'fishbowl';
 
+export type GDDifficulty = 'Beginner' | 'Intermediate' | 'Advanced' | 'Brutal';
+
+export type GDSessionType = 
+  | 'Practice Session' 
+  | 'Drill Session' 
+  | 'Pressure Session' 
+  | 'Leadership Session' 
+  | 'Summary Session' 
+  | 'Evaluation Session';
+
 export type GDLanguageMode = 'en-IN' | 'hinglish' | 'en-US';
+
+export type PersonaRole = 
+  | 'moderator' 
+  | 'leader' 
+  | 'analyst' 
+  | 'critic' 
+  | 'quiet' 
+  | 'dominator' 
+  | 'supporter' 
+  | 'clown' 
+  | 'deviator' 
+  | 'diplomat';
 
 export interface PersonaConfig {
   id: string;
   name: string;
-  role: 'moderator' | 'dominator' | 'analyst' | 'quiet' | 'drifter' | 'diplomat';
+  role: PersonaRole;
   archetype: string;
   avatar: string;
   color: string;
@@ -30,15 +52,19 @@ export interface PersonaConfig {
   rate: number;
   instructions: string;
   dominanceWeight: number;
+  strength?: string;
+  weakness?: string;
+  keyPhrases?: string[];
 }
 
 export interface GDTopic {
   id: string;
   title: string;
-  category: 'Placement Classic' | 'Case Study' | 'Abstract' | 'Controversial' | 'Tech & AI';
+  category: 'Placement Classic' | 'Case Study' | 'Abstract' | 'Controversial' | 'Tech & AI' | 'Follow-up Drill';
   description: string;
   keyPerspectives: string[];
   suggestedDurationMins: number;
+  difficulty?: GDDifficulty;
 }
 
 export interface GDMessage {
@@ -59,9 +85,10 @@ export interface GDMessage {
 
 export interface FeedbackMetric {
   name: string;
-  score: number; // 1 to 10
+  score: number; // 0 to 10
   verdict: 'Excellent' | 'Good' | 'Needs Improvement' | 'Critical Concern';
   explanation: string;
+  notes?: string;
   quotedMoments: Array<{
     quote: string;
     timestampSec: number;
@@ -70,12 +97,36 @@ export interface FeedbackMetric {
   }>;
 }
 
+export interface ScorecardArea {
+  name: 'Content' | 'Communication' | 'Listening' | 'Teamwork' | 'Leadership' | 'Body Language' | 'Time Management' | 'Emotional Maturity';
+  score: number; // 0 to 10
+  notes: string;
+}
+
 export interface MissedOpportunity {
   timestampSec: number;
   triggerContext: string;
   whatYouSaidOrDid: string;
   whatYouCouldHaveSaid: string;
   strategicPrinciple: string;
+}
+
+export interface SelfUpgradeLog {
+  sessionNumber: number;
+  date: string;
+  topic: string;
+  difficulty: GDDifficulty;
+  sessionType: GDSessionType;
+  duration: string;
+  aiParticipants: string[];
+  humanScore: number; // out of 80
+  whatWorked: string[];
+  whatFailed: string[];
+  aiUpgradeApplied: string[];
+  humanImprovementTarget: string[];
+  newPhrasesAdded: string[];
+  newTopicsAdded: string[];
+  nextSessionPlan: string;
 }
 
 export interface GDReport {
@@ -88,17 +139,33 @@ export interface GDReport {
   studentTurns: number;
   interruptionsCaused: number;
   interruptionsSuffered: number;
-  overallScore: number;
+  
+  // Official v3.0 Scorecard (/80 total)
+  scorecard: ScorecardArea[];
+  totalScore80: number; // 0 to 80
+  overallScore: number; // normalized percentage 0 to 100 for compatibility
+
   hiringRecommendation: 'Strong Hire' | 'Hire' | 'Borderline / Needs Polish' | 'Do Not Advance';
   executiveSummary: string;
+  
   metrics: {
-    initiativeAndOpening: FeedbackMetric;
-    ideaQualityAndFrameworks: FeedbackMetric;
-    synthesizingAndListening: FeedbackMetric;
-    floorControlAndPacing: FeedbackMetric;
-    handlingInterruptionAndConflict: FeedbackMetric;
-    conclusionAndSummary: FeedbackMetric;
+    content: FeedbackMetric;
+    communication: FeedbackMetric;
+    listening: FeedbackMetric;
+    teamwork: FeedbackMetric;
+    leadership: FeedbackMetric;
+    bodyLanguage: FeedbackMetric;
+    timeManagement: FeedbackMetric;
+    emotionalMaturity: FeedbackMetric;
+    // Legacy metrics aliases for backward compatibility if needed
+    initiativeAndOpening?: FeedbackMetric;
+    ideaQualityAndFrameworks?: FeedbackMetric;
+    synthesizingAndListening?: FeedbackMetric;
+    floorControlAndPacing?: FeedbackMetric;
+    handlingInterruptionAndConflict?: FeedbackMetric;
+    conclusionAndSummary?: FeedbackMetric;
   };
+  
   missedOpportunities: MissedOpportunity[];
   participantBreakdown: Array<{
     id: string;
@@ -108,14 +175,19 @@ export interface GDReport {
     speakingPercent: number;
     turnCount: number;
   }>;
+
+  // Self Upgrade Engine Log
+  selfUpgradeLog?: SelfUpgradeLog;
 }
 
 export interface RoomSettings {
   topic: GDTopic;
   format: GDFormat;
+  difficulty: GDDifficulty;
+  sessionType: GDSessionType;
   languageMode: GDLanguageMode;
-  panelSize: number; // 3 to 5 AI participants (excluding moderator)
-  durationMins: number; // 3 to 12 mins
+  panelSize: number; // 3 to 6 AI participants (excluding moderator)
+  durationMins: number; // 3 to 15 mins
   studentName: string;
   patienceLatencyMs: number; // 500ms to 2500ms
   fishbowlSpectatorMode: boolean;

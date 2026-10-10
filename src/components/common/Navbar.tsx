@@ -1,6 +1,7 @@
 import React from 'react';
-import { Mic, Settings, Users, Sparkles } from 'lucide-react';
+import { Settings, Users, Sparkles, BrainCircuit } from 'lucide-react';
 import { GDStage } from '../../types/gd';
+import { SelfUpgradeEngine } from '../../services/selfUpgradeEngine';
 
 interface NavbarProps {
   stage: GDStage;
@@ -15,6 +16,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenSettings,
   onRestartSession,
 }) => {
+  const profile = SelfUpgradeEngine.getProfile();
+
   const formatTime = (secs: number) => {
     const m = Math.floor(secs / 60);
     const s = secs % 60;
@@ -24,54 +27,67 @@ export const Navbar: React.FC<NavbarProps> = ({
   const getStageBadge = () => {
     switch (stage) {
       case 'setup':
-        return <span className="bg-slate-800 text-slate-300 px-2.5 py-1 rounded-full text-xs font-medium">Room Setup</span>;
+        return <span className="bg-slate-800 text-slate-300 px-2.5 py-1 rounded-md text-xs font-medium border border-slate-700/60">Lobby</span>;
       case 'prep':
-        return <span className="bg-amber-900/40 text-amber-300 border border-amber-600/40 px-2.5 py-1 rounded-full text-xs font-medium animate-pulse">Silent Prep (1 min)</span>;
+        return <span className="bg-amber-500/10 text-amber-300 border border-amber-500/30 px-2.5 py-1 rounded-md text-xs font-medium">Silent Prep (60s)</span>;
       case 'opening':
-        return <span className="bg-indigo-900/40 text-indigo-300 border border-indigo-600/40 px-2.5 py-1 rounded-full text-xs font-medium">Moderator Opening</span>;
+        return <span className="bg-blue-500/10 text-blue-300 border border-blue-500/30 px-2.5 py-1 rounded-md text-xs font-medium">Moderator Opening</span>;
       case 'open_discussion':
-        return <span className="bg-emerald-900/40 text-emerald-300 border border-emerald-600/40 px-2.5 py-1 rounded-full text-xs font-medium flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> Live Discussion</span>;
+        return (
+          <span className="bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 px-2.5 py-1 rounded-md text-xs font-medium flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span>Live Round</span>
+          </span>
+        );
       case 'warning':
-        return <span className="bg-orange-900/40 text-orange-300 border border-orange-600/40 px-2.5 py-1 rounded-full text-xs font-medium">2-Min Warning</span>;
+        return <span className="bg-amber-500/10 text-amber-300 border border-amber-500/30 px-2.5 py-1 rounded-md text-xs font-medium">2-Min Warning</span>;
       case 'closing':
-        return <span className="bg-purple-900/40 text-purple-300 border border-purple-600/40 px-2.5 py-1 rounded-full text-xs font-medium">Closing Round</span>;
+        return <span className="bg-purple-500/10 text-purple-300 border border-purple-500/30 px-2.5 py-1 rounded-md text-xs font-medium">Closing Round</span>;
       case 'evaluating':
-        return <span className="bg-blue-900/40 text-blue-300 border border-blue-600/40 px-2.5 py-1 rounded-full text-xs font-medium">Evaluating with Recruiter AI...</span>;
+        return <span className="bg-blue-500/10 text-blue-300 border border-blue-500/30 px-2.5 py-1 rounded-md text-xs font-medium">Recruiter Scoring...</span>;
       case 'report':
-        return <span className="bg-emerald-800/50 text-emerald-300 border border-emerald-500/40 px-2.5 py-1 rounded-full text-xs font-medium">Recruiter Report</span>;
+        return <span className="bg-blue-600/15 text-blue-400 border border-blue-500/30 px-2.5 py-1 rounded-md text-xs font-medium">Evaluation Dossier</span>;
       default:
         return null;
     }
   };
 
   return (
-    <header className="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-md sticky top-0 z-50 px-4 lg:px-8 py-3.5 flex items-center justify-between">
-      <div className="flex items-center gap-3">
+    <header className="border-b border-slate-800 bg-slate-900/95 backdrop-blur-md sticky top-0 z-50 px-4 lg:px-8 py-3 flex items-center justify-between">
+      <div className="flex items-center gap-4">
         <button 
           onClick={onRestartSession}
-          className="flex items-center gap-2 group text-left"
+          className="flex items-center gap-2.5 group text-left"
           title="Return to lobby"
         >
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition-transform">
-            <Users className="w-5 h-5 text-white" />
+          <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold text-sm shadow-sm group-hover:bg-blue-500 transition-colors">
+            GD
           </div>
           <div>
-            <div className="flex items-center gap-1.5">
-              <span className="font-bold text-lg tracking-tight text-white">easy<span className="text-emerald-400">.gd</span></span>
-              <span className="bg-emerald-500/10 text-emerald-400 text-[10px] px-1.5 py-0.5 rounded border border-emerald-500/20 font-mono uppercase">AI Simulator</span>
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-base tracking-tight text-white">GD Arena</span>
+              <span className="bg-slate-800 text-slate-300 text-[10px] px-1.5 py-0.5 rounded border border-slate-700 font-mono font-medium">
+                v3.0 Adaptive
+              </span>
             </div>
-            <p className="text-[11px] text-slate-400 font-normal">Campus Placement GD Practice</p>
+            <p className="text-[11px] text-slate-400 font-normal hidden sm:block">Campus Placement GD Simulator</p>
           </div>
         </button>
 
-        <div className="hidden sm:flex items-center ml-4 pl-4 border-l border-slate-800">
+        <div className="hidden md:flex items-center ml-2 pl-4 border-l border-slate-800 gap-2">
           {getStageBadge()}
+          <div className="flex items-center gap-1.5 text-[11px] text-slate-400 bg-slate-800/60 border border-slate-700/50 px-2.5 py-1 rounded-md">
+            <BrainCircuit className="w-3.5 h-3.5 text-blue-400" />
+            <span>AI Level: <strong className="text-slate-200">{profile.currentDifficulty}</strong></span>
+            <span className="text-slate-500">·</span>
+            <span>Session #{profile.totalSessions + 1}</span>
+          </div>
         </div>
       </div>
 
       <div className="flex items-center gap-3">
         {stage !== 'setup' && stage !== 'report' && stage !== 'evaluating' && (
-          <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg text-sm font-mono font-semibold text-slate-200">
+          <div className="flex items-center gap-2 bg-slate-800/80 border border-slate-700 px-3 py-1.5 rounded-lg text-sm font-mono font-medium text-slate-100">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
             <span>{formatTime(remainingSec)}</span>
           </div>
@@ -79,11 +95,11 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         <button
           onClick={onOpenSettings}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-medium text-slate-300 transition-colors"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700/80 border border-slate-700 text-xs font-medium text-slate-200 transition-colors"
           title="Configure API Keys (Grok / Sarvam / Groq / Gemini)"
         >
           <Settings className="w-3.5 h-3.5 text-slate-400" />
-          <span className="hidden md:inline">API Config</span>
+          <span className="hidden sm:inline">Settings</span>
         </button>
       </div>
     </header>

@@ -248,7 +248,9 @@ export const App: React.FC = () => {
         currentMsgs,
         settings?.studentName || 'Candidate',
         (settings?.durationMins || 5) * 60,
-        participants
+        participants,
+        settings?.difficulty || 'Beginner',
+        settings?.sessionType || 'Practice Session'
       );
       setReport(fallbackReport);
     } finally {

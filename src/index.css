@@ -4,7 +4,7 @@
 
 @layer base {
   body {
-    @apply bg-slate-950 text-slate-100 font-sans antialiased;
+    @apply bg-slate-900 text-slate-100 font-sans antialiased selection:bg-blue-600 selection:text-white;
     overflow-x: hidden;
   }
 }
@@ -20,27 +20,30 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(51, 65, 85, 0.8);
+  background: rgba(51, 65, 85, 0.7);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(100, 116, 139, 1);
+  background: rgba(71, 85, 105, 1);
 }
 
-/* Glow effects */
-.glow-emerald {
-  box-shadow: 0 0 25px -5px rgba(16, 185, 129, 0.4);
+/* Restrained SaaS card elevations & focus styling */
+.saas-card {
+  @apply bg-slate-900/90 border border-slate-800 rounded-2xl shadow-sm transition-all;
 }
 
-.glow-blue {
-  box-shadow: 0 0 25px -5px rgba(59, 130, 246, 0.4);
+.saas-card-hover {
+  @apply hover:border-slate-700 hover:shadow-md;
 }
 
-.glow-amber {
-  box-shadow: 0 0 25px -5px rgba(245, 158, 11, 0.4);
+/* Keyframe animations */
+@keyframes soundWave {
+  0%, 100% { height: 4px; }
+  50% { height: 16px; }
 }
 
-.glow-red {
-  box-shadow: 0 0 25px -5px rgba(239, 68, 68, 0.4);
+.animate-sound-wave {
+  animation: soundWave 0.8s ease-in-out infinite;
 }
+
