@@ -30,30 +30,30 @@ export const LiveTranscript: React.FC<LiveTranscriptProps> = ({
   };
 
   const getBadgeStyle = (senderId: string) => {
-    if (senderId === 'user') return 'text-blue-400 bg-blue-500/10 border-blue-500/20';
-    if (senderId === 'moderator') return 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20';
-    return 'text-slate-300 bg-slate-800 border-slate-700/80';
+    if (senderId === 'user') return 'text-indigo-700 bg-indigo-50 border-indigo-200';
+    if (senderId === 'moderator') return 'text-blue-700 bg-blue-50 border-blue-200';
+    return 'text-slate-700 bg-slate-100 border-slate-200';
   };
 
   return (
-    <div className="bg-slate-900/95 border border-slate-800 rounded-2xl p-4 flex flex-col h-[490px] shadow-sm">
+    <div className="bg-white border border-slate-200 rounded-xl p-4 flex flex-col h-[520px] shadow-sm">
       {/* Header */}
-      <div className="flex items-center justify-between pb-3 border-b border-slate-800 shrink-0">
+      <div className="flex items-center justify-between pb-3 border-b border-slate-100 shrink-0">
         <div className="flex items-center gap-2">
-          <MessageSquare className="w-4 h-4 text-blue-400" />
-          <h3 className="font-semibold text-xs text-slate-200 uppercase tracking-wide">Live Transcript</h3>
+          <MessageSquare className="w-4 h-4 text-indigo-600" />
+          <h3 className="font-bold text-xs text-slate-800 uppercase tracking-wide">Live Discussion Stream</h3>
         </div>
-        <div className="text-[11px] text-slate-500 font-mono">
+        <div className="text-[11px] text-slate-400 font-mono">
           {messages.length} utterances
         </div>
       </div>
 
       {/* Message Stream */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto py-3 space-y-3 pr-1.5">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto py-3 space-y-2.5 pr-1">
         {messages.length === 0 && !interimText && (
-          <div className="h-full flex flex-col items-center justify-center text-slate-500 text-xs text-center p-6 space-y-2">
-            <Quote className="w-5 h-5 text-slate-600" />
-            <p>The moderator is framing the round topic...</p>
+          <div className="h-full flex flex-col items-center justify-center text-slate-400 text-xs text-center p-6 space-y-2">
+            <Quote className="w-5 h-5 text-slate-300" />
+            <p>The moderator is preparing to open the discussion...</p>
           </div>
         )}
 
@@ -62,37 +62,37 @@ export const LiveTranscript: React.FC<LiveTranscriptProps> = ({
           return (
             <div
               key={msg.id}
-              className={`p-3 rounded-xl border text-xs space-y-1.5 transition-colors ${
+              className={`p-3 rounded-lg border text-xs space-y-1 transition-colors ${
                 isUser
-                  ? 'bg-blue-950/20 border-blue-500/30 ml-4'
-                  : 'bg-slate-950/70 border-slate-800/80 mr-2'
+                  ? 'bg-indigo-50/40 border-indigo-200 ml-3'
+                  : 'bg-slate-50 border-slate-200 mr-2'
               }`}
             >
               <div className="flex items-center justify-between text-[11px]">
                 <div className="flex items-center gap-1.5">
                   <span
-                    className={`font-semibold px-2 py-0.5 rounded text-[10px] border ${getBadgeStyle(
+                    className={`font-semibold px-1.5 py-0.5 rounded text-[10px] border ${getBadgeStyle(
                       msg.senderId
                     )}`}
                   >
                     {msg.senderName}
                   </span>
-                  <span className="text-slate-500 text-[10px] capitalize font-mono">
+                  <span className="text-slate-400 text-[10px] capitalize font-mono">
                     [{msg.senderRole}]
                   </span>
                 </div>
-                <span className="text-[10px] text-slate-500 font-mono">
+                <span className="text-[10px] text-slate-400 font-mono">
                   +{formatTimestamp(msg.timestamp)}
                 </span>
               </div>
 
-              <p className="text-slate-200 leading-relaxed text-xs">
+              <p className="text-slate-800 leading-relaxed text-xs">
                 {msg.text}
               </p>
 
               {/* Interruption Marker */}
               {msg.isInterrupted && (
-                <div className="flex items-center gap-1 text-[10px] font-medium text-rose-400 pt-0.5">
+                <div className="flex items-center gap-1 text-[10px] font-medium text-rose-600 pt-0.5">
                   <AlertCircle className="w-3 h-3" />
                   <span>[Interrupted by {msg.interruptedBy || 'peer'}]</span>
                 </div>
@@ -103,12 +103,12 @@ export const LiveTranscript: React.FC<LiveTranscriptProps> = ({
 
         {/* Live Interim Transcript Bubble */}
         {isUserSpeaking && interimText && (
-          <div className="p-3 rounded-xl border border-blue-500/40 bg-blue-950/30 ml-4 space-y-1">
-            <div className="flex items-center gap-2 text-[10px] text-blue-400 font-medium">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-ping"></span>
+          <div className="p-3 rounded-lg border border-indigo-300 bg-indigo-50 ml-3 space-y-1">
+            <div className="flex items-center gap-2 text-[10px] text-indigo-700 font-semibold">
+              <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 animate-ping"></span>
               <span>{userName} (Transcribing Live...)</span>
             </div>
-            <p className="text-xs text-blue-200 font-mono italic">
+            <p className="text-xs text-indigo-900 font-mono italic">
               "{interimText}"
             </p>
           </div>

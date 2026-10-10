@@ -60,94 +60,83 @@ export const GDRoomView: React.FC<GDRoomViewProps> = ({
   const userSpeakingSec = calculateSpeakingSec('user');
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6 space-y-5 pb-28 animate-fade-in">
+    <div className="max-w-7xl mx-auto px-6 py-6 space-y-5 pb-24">
       
-      {/* Topic Header & Status Bar */}
-      <div className="bg-slate-900/95 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm space-y-3">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-semibold text-blue-400 bg-blue-500/10 px-2.5 py-0.5 rounded border border-blue-500/20 uppercase tracking-wider">
-                {settings.topic.category}
-              </span>
-              <span className="text-xs text-slate-400 font-mono">
-                {settings.sessionType || 'Practice Session'} · Level: {settings.difficulty || 'Beginner'}
-              </span>
-            </div>
-            <h2 className="text-base sm:text-lg font-semibold text-white tracking-tight">
-              {settings.topic.title}
-            </h2>
+      {/* Top Banner */}
+      <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100 uppercase tracking-wider">
+              {settings.topic.category}
+            </span>
+            <span className="text-xs text-slate-500 font-mono">
+              {settings.sessionType} · Level: {settings.difficulty}
+            </span>
           </div>
-
-          {/* Student Mic Status Indicator */}
-          <div className="flex items-center gap-3 bg-slate-950/80 border border-slate-800 px-3.5 py-2 rounded-xl self-start md:self-auto">
-            <div className="flex items-center gap-2 text-xs">
-              <Mic className={`w-3.5 h-3.5 ${!isMuted ? 'text-blue-400 animate-pulse' : 'text-slate-500'}`} />
-              <span className="text-slate-300 font-medium">Mic Input:</span>
-              <AudioVisualizer volume={userVolume} isSpeaking={isUserSpeaking} />
-            </div>
-          </div>
+          <h2 className="text-base font-bold text-slate-900 tracking-tight">
+            {settings.topic.title}
+          </h2>
         </div>
 
-        {/* Quiet AI Notice */}
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-950/60 border border-slate-800 text-[11px] text-slate-400">
-          <Info className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-          <span>
-            You are in a live room with {participants.length} AI peers and 1 HR moderator. Speak out loud through your microphone to claim the floor.
-          </span>
+        {/* Student Mic Status Indicator */}
+        <div className="flex items-center gap-2.5 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg self-start md:self-auto">
+          <Mic className={`w-3.5 h-3.5 ${!isMuted ? 'text-indigo-600 animate-pulse' : 'text-slate-400'}`} />
+          <span className="text-xs text-slate-700 font-medium">Mic:</span>
+          <AudioVisualizer volume={userVolume} isSpeaking={isUserSpeaking} />
         </div>
       </div>
 
-      {/* Main Grid: Virtual Discussion Table + Live Transcript */}
+      {/* Main Discussion Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
         
-        {/* Left Column: Virtual Meeting Room Grid (7 cols) */}
-        <div className="lg:col-span-7 bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-sm space-y-6">
-          
-          <div className="space-y-6">
-            
-            {/* Top: Moderator at Head of Table */}
-            <div className="flex justify-center">
-              <AvatarCard
-                persona={MODERATOR_PERSONA}
-                isSpeaking={activeSpeakerId === MODERATOR_PERSONA.id}
-                speakingTimeSec={calculateSpeakingSec(MODERATOR_PERSONA.id)}
-              />
-            </div>
+        {/* Left: Meeting Floor (7 Cols) */}
+        <div className="lg:col-span-7 bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-5">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+            <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Conference Floor</span>
+            <span className="text-[11px] text-slate-500 font-medium">{participants.length} AI Candidates + 1 HR Chair</span>
+          </div>
 
-            {/* Middle: AI Peers around the Table */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 justify-items-center">
-              {participants.map((p) => {
-                const isSpeaking = activeSpeakerId === p.id;
-                const lastMsg = messages[messages.length - 1];
-                const wasCutOff = lastMsg && lastMsg.senderId === p.id && lastMsg.isInterrupted;
-                return (
-                  <AvatarCard
-                    key={p.id}
-                    persona={p}
-                    isSpeaking={isSpeaking}
-                    isInterrupted={Boolean(wasCutOff)}
-                    speakingTimeSec={calculateSpeakingSec(p.id)}
-                    compact
-                  />
-                );
-              })}
-            </div>
+          {/* Top: Moderator at Head of Table */}
+          <div className="flex justify-center">
+            <AvatarCard
+              persona={MODERATOR_PERSONA}
+              isSpeaking={activeSpeakerId === MODERATOR_PERSONA.id}
+              speakingTimeSec={calculateSpeakingSec(MODERATOR_PERSONA.id)}
+            />
+          </div>
 
-            {/* Bottom: Candidate (You) */}
-            <div className="flex justify-center pt-1 border-t border-slate-800/80">
-              <AvatarCard
-                isUser
-                userName={settings.studentName}
-                isSpeaking={isUserSpeaking}
-                hasHandRaised={hasHandRaised}
-                speakingTimeSec={userSpeakingSec}
-              />
-            </div>
+          {/* Middle: AI Peers around the Table */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 justify-items-center">
+            {participants.map((p) => {
+              const isSpeaking = activeSpeakerId === p.id;
+              const lastMsg = messages[messages.length - 1];
+              const wasCutOff = lastMsg && lastMsg.senderId === p.id && lastMsg.isInterrupted;
+              return (
+                <AvatarCard
+                  key={p.id}
+                  persona={p}
+                  isSpeaking={isSpeaking}
+                  isInterrupted={Boolean(wasCutOff)}
+                  speakingTimeSec={calculateSpeakingSec(p.id)}
+                  compact
+                />
+              );
+            })}
+          </div>
+
+          {/* Bottom: Candidate (You) */}
+          <div className="flex justify-center pt-2 border-t border-slate-100">
+            <AvatarCard
+              isUser
+              userName={settings.studentName}
+              isSpeaking={isUserSpeaking}
+              hasHandRaised={hasHandRaised}
+              speakingTimeSec={userSpeakingSec}
+            />
           </div>
         </div>
 
-        {/* Right Column: Live Transcript Stream (5 cols) */}
+        {/* Right: Live Transcript Stream (5 Cols) */}
         <div className="lg:col-span-5">
           <LiveTranscript
             messages={messages}

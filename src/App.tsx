@@ -5,6 +5,9 @@ import {
 import { TOPIC_COLLECTION } from './data/topics';
 import { AI_CANDIDATE_PERSONAS } from './data/personas';
 import { Navbar } from './components/common/Navbar';
+import { Sidebar } from './components/common/Sidebar';
+import { TopicsDrawer } from './components/common/TopicsDrawer';
+import { AnalyticsView } from './components/common/AnalyticsView';
 import { SetupModal } from './components/setup/SetupModal';
 import { ApiKeyConfigModal } from './components/setup/ApiKeyConfigModal';
 import { PrepCountdownModal } from './components/room/PrepCountdownModal';
@@ -16,6 +19,7 @@ import { generateClientSideReport } from './services/clientReportGenerator';
 import { Loader2 } from 'lucide-react';
 
 export const App: React.FC = () => {
+  const [currentTab, setCurrentTab] = useState<'lobby' | 'history' | 'topics' | 'analytics' | 'settings'>('lobby');
   const [stage, setStage] = useState<GDStage>('setup');
   const [settings, setSettings] = useState<RoomSettings | null>(null);
   const [participants, setParticipants] = useState<PersonaConfig[]>(AI_CANDIDATE_PERSONAS.slice(0, 4));
@@ -263,79 +267,127 @@ export const App: React.FC = () => {
     audioEngineRef.current?.cleanup();
     orchestratorRef.current?.stop();
     setStage('setup');
+    setCurrentTab('lobby');
     setMessages([]);
     setReport(null);
   };
 
+  const handleSelectTab = (tab: 'lobby' | 'history' | 'topics' | 'analytics' | 'settings') => {
+    if (tab === 'settings') {
+      setIsApiKeyModalOpen(true);
+    } else {
+      setCurrentTab(tab);
+    }
+  };
+
   return (
-    <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100 font-sans selection:bg-emerald-500 selection:text-white">
-      {/* Top Navbar */}
-      <Navbar
+    <div className="flex h-screen w-screen overflow-hidden bg-[#f8fafc] text-slate-800 font-sans selection:bg-indigo-600 selection:text-white">
+      {/* Persistent Left Sidebar */}
+      <Sidebar
+        currentTab={currentTab}
+        onSelectTab={handleSelectTab}
         stage={stage}
-        remainingSec={remainingSec}
+        onRestart={handleRestart}
         onOpenSettings={() => setIsApiKeyModalOpen(true)}
-        onRestartSession={handleRestart}
       />
 
-      {/* Main Content Areas */}
-      <main className="flex-1 flex flex-col justify-center">
-        {stage === 'setup' && (
-          <SetupModal
-            onStartRoom={handleStartRoom}
-            onOpenSettings={() => setIsApiKeyModalOpen(true)}
-          />
-        )}
+      {/* Main Content Area (Column) */}
+      <div className="flex-1 flex flex-col h-screen min-w-0 overflow-hidden">
+        {/* Top Navbar */}
+        <Navbar
+          stage={stage}
+          remainingSec={remainingSec}
+          onOpenSettings={() => setIsApiKeyModalOpen(true)}
+          onRestartSession={handleRestart}
+        />
 
-        {stage === 'prep' && settings && (
-          <PrepCountdownModal
-            topic={settings.topic}
-            onFinishPrep={handleFinishPrep}
-          />
-        )}
+        {/* Scrollable Main Area */}
+        <main className="flex-1 overflow-y-auto">
+          {/* If Candidate is actively in a Live Session, show that directly */}
+          {stage !== 'setup' && stage !== 'report' && (
+            <>
+              {stage === 'prep' && settings && (
+                <PrepCountdownModal
+                  topic={settings.topic}
+                  onFinishPrep={handleFinishPrep}
+                />
+              )}
 
-        {(stage === 'opening' || stage === 'open_discussion' || stage === 'warning' || stage === 'closing') && settings && (
-          <GDRoomView
-            settings={settings}
-            participants={participants}
-            messages={messages}
-            activeSpeakerId={activeSpeakerId}
-            isAiSpeaking={isAiSpeaking}
-            isUserSpeaking={isUserSpeaking}
-            interimTranscript={interimTranscript}
-            isMuted={isMuted}
-            hasHandRaised={hasHandRaised}
-            currentCoachHint={currentCoachHint}
-            userVolume={userVolume}
-            onToggleMute={handleToggleMute}
-            onInterruptBargeIn={handleInterruptBargeIn}
-            onToggleHand={handleToggleHand}
-            onEndDiscussion={handleEndDiscussion}
-            isFishbowlInside={isFishbowlInside}
-            onTagInFishbowl={() => setIsFishbowlInside(true)}
-          />
-        )}
+              {(stage === 'opening' || stage === 'open_discussion' || stage === 'warning' || stage === 'closing') && settings && (
+                <GDRoomView
+                  settings={settings}
+                  participants={participants}
+                  messages={messages}
+                  activeSpeakerId={activeSpeakerId}
+                  isAiSpeaking={isAiSpeaking}
+                  isUserSpeaking={isUserSpeaking}
+                  interimTranscript={interimTranscript}
+                  isMuted={isMuted}
+                  hasHandRaised={hasHandRaised}
+                  currentCoachHint={currentCoachHint}
+                  userVolume={userVolume}
+                  onToggleMute={handleToggleMute}
+                  onInterruptBargeIn={handleInterruptBargeIn}
+                  onToggleHand={handleToggleHand}
+                  onEndDiscussion={handleEndDiscussion}
+                  isFishbowlInside={isFishbowlInside}
+                  onTagInFishbowl={() => setIsFishbowlInside(true)}
+                />
+              )}
 
-        {stage === 'evaluating' && (
-          <div className="flex flex-col items-center justify-center p-12 text-center space-y-4 max-w-md mx-auto animate-fade-in">
-            <div className="w-16 h-16 rounded-3xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-              <Loader2 className="w-8 h-8 text-emerald-400 animate-spin" />
-            </div>
-            <div className="space-y-1">
-              <h3 className="text-xl font-bold text-white">Analyzing Placement Performance</h3>
-              <p className="text-xs text-slate-400">
-                Evaluating airtime distribution, idea novelty, active listening, and linking quoted moments...
-              </p>
-            </div>
-          </div>
-        )}
+              {stage === 'evaluating' && (
+                <div className="h-full flex flex-col items-center justify-center p-12 text-center space-y-4 max-w-md mx-auto animate-fade-in">
+                  <div className="w-14 h-14 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center">
+                    <Loader2 className="w-7 h-7 text-indigo-600 animate-spin" />
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="text-base font-bold text-slate-900">Evaluating Placement Performance</h3>
+                    <p className="text-xs text-slate-500">
+                      Analyzing floor airtime, argument synthesis, active listening, and 8-pillar recruiter rubric (/80)...
+                    </p>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
 
-        {stage === 'report' && report && (
-          <DiagnosticReport
-            report={report}
-            onRestart={handleRestart}
-          />
-        )}
-      </main>
+          {/* Finished Report Dossier View */}
+          {stage === 'report' && report && (
+            <DiagnosticReport
+              report={report}
+              onRestart={handleRestart}
+            />
+          )}
+
+          {/* Setup / Tab Views */}
+          {stage === 'setup' && (
+            <>
+              {currentTab === 'lobby' && (
+                <SetupModal
+                  onStartRoom={handleStartRoom}
+                  onOpenSettings={() => setIsApiKeyModalOpen(true)}
+                />
+              )}
+
+              {currentTab === 'topics' && (
+                <TopicsDrawer
+                  onSelectTopic={(topic) => {
+                    // Start or preselect topic and return to lobby
+                    setCurrentTab('lobby');
+                  }}
+                />
+              )}
+
+              {(currentTab === 'analytics' || currentTab === 'history') && (
+                <AnalyticsView
+                  onBackToLobby={() => setCurrentTab('lobby')}
+                  activeView={currentTab}
+                />
+              )}
+            </>
+          )}
+        </main>
+      </div>
 
       {/* API Key Modal */}
       <ApiKeyConfigModal
